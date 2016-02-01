@@ -3,13 +3,17 @@ using Microsoft.Reactive.Testing;
 using Nito.AsyncEx;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Reactive.Concurrency;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Subject = OneCog.Io.Owl.Intuition.Command;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Reactive.Subjects;
 
 namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
 {
@@ -22,8 +26,8 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
 
         private Socket.IFactory _socketFactory;
         private Subject.Response.IParser _responseParser;
-        private Socket.IUdpClient _receiveSocket;
-        private Socket.IUdpClient _sendSocket;
+        private Socket.IObservableUdpClient _receiveSocket;
+        private Socket.IObservableUdpClient _sendSocket;
         private TestScheduler _scheduler;
         
         [SetUp]
@@ -34,8 +38,8 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
             _scheduler = new TestScheduler();
             _socketFactory = A.Fake<Socket.IFactory>();
 
-            _receiveSocket = A.Fake<Socket.IUdpClient>(x => x.Synchronized());
-            _sendSocket = A.Fake<Socket.IUdpClient>(x => x.Synchronized());
+            _receiveSocket = A.Fake<Socket.IObservableUdpClient>();
+            _sendSocket = A.Fake<Socket.IObservableUdpClient>();
 
             A.CallTo(() => _socketFactory.ConstructCommandReceiveSocket(LocalEndpoint)).Returns(_receiveSocket);
             A.CallTo(() => _socketFactory.ConstructCommandSendSocket(LocalEndpoint)).Returns(_sendSocket);
@@ -46,10 +50,6 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
         [Test]
         public void ConstructReceiveSocketWhenOpened()
         {
-            TaskCompletionSource<UdpReceiveResult> receiveTask = new TaskCompletionSource<UdpReceiveResult>();
-
-            A.CallTo(() => _receiveSocket.ReceiveAsync()).Returns(receiveTask.Task);
-
             Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey, _scheduler);
 
             instance.Open();
@@ -59,11 +59,7 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
 
         [Test]
         public void ConstuctSendSocketWhenOpened()
-        {
-            TaskCompletionSource<UdpReceiveResult> receiveTask = new TaskCompletionSource<UdpReceiveResult>();
-
-            A.CallTo(() => _receiveSocket.ReceiveAsync()).Returns(receiveTask.Task);
-            
+        {            
             Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey, _scheduler);
 
             instance.Open();
@@ -73,52 +69,31 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
 
         [Test]
         public void SendBytesToRemoteEndpointWhenCommandIsSent()
-        {
-            TaskCompletionSource<UdpReceiveResult> receiveTask = new TaskCompletionSource<UdpReceiveResult>();
-            TaskCompletionSource<int> sendTask = new TaskCompletionSource<int>();
-
-            A.CallTo(() => _receiveSocket.ReceiveAsync()).Returns(receiveTask.Task);
-            A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint)).Invokes(call => sendTask.SetResult(call.GetArgument<int>(1))).Returns(sendTask.Task);
+        {            
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint)).ReturnsLazily(call => Observable.Return(call.GetArgument<int>(1)));
             
-            Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey);
+            Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey, _scheduler);
 
             instance.Open();
 
             var response = instance.Send(new Subject.Request.GetDevice(0));
 
-            //await A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Within.TimeSpan(TimeSpan.FromSeconds(10)));
+            _scheduler.AdvanceBy(1);
 
-            A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
         public void ReceiveBytesFromRemoteEndpointWhenCommandIsSent()
         {
             byte[] buffer = Encoding.ASCII.GetBytes("TEST");
-
-            TaskCompletionSource<UdpReceiveResult> receiveTask = null;
-            TaskCompletionSource<int> sendTask = new TaskCompletionSource<int>();
-
-            A.CallTo(() => _receiveSocket.ReceiveAsync()).ReturnsLazily(
-                call =>
-                {
-                    receiveTask = new TaskCompletionSource<UdpReceiveResult>();
-                    return receiveTask.Task;
-                }
-            );
-
-            A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint))
-             .Invokes(
-                call =>
-                {
-                    sendTask.SetResult(call.GetArgument<int>(1));
-                    receiveTask.SetResult(new UdpReceiveResult(buffer, RemoteEndpoint));
-                })
-             .Returns(sendTask.Task);
-
             Subject.Response.Device expected = new Subject.Response.Device(Subject.Status.Ok, 0, "TEST", "TEST", "TEST", Values.SignalStrength.Parse("0"), Values.LinkQuality.Parse("0"), Values.BatteryState.Parse("0"), TimeSpan.FromSeconds(1), 1, 1);
-
             A.CallTo(() => _responseParser.GetResponses("TEST")).Returns(new[] { expected });
+
+            Subject<UdpReceiveResult> received = new Subject<UdpReceiveResult>();
+
+            A.CallTo(() => _receiveSocket.Receive()).ReturnsLazily(call => received);
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint)).ReturnsLazily(call => Observable.Return(call.GetArgument<int>(1)));
 
             Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey, _scheduler);
 
@@ -128,40 +103,86 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
 
             _scheduler.AdvanceBy(1);
 
-            Subject.Response.Device actual = responseTask.Result;
-            
-            Assert.That(actual, Is.EqualTo(expected));
+            A.CallTo(() => _receiveSocket.Receive()).MustHaveHappened();
+
+            received.OnNext(new UdpReceiveResult(buffer, RemoteEndpoint));
+
+            Assert.That(responseTask.Status, Is.EqualTo(TaskStatus.RanToCompletion));            
+            Assert.That(responseTask.Result, Is.EqualTo(expected));
         }
 
         [Test]
         public void OnlySendASingleCommandAtATime()
         {
-            AsyncContext.Run(
-                async () =>
-                {
-                    TaskCompletionSource<UdpReceiveResult> receiveTask = new TaskCompletionSource<UdpReceiveResult>();
-                    TaskCompletionSource<int> sendTask = new TaskCompletionSource<int>();
+            A.CallTo(() => _receiveSocket.Receive()).ReturnsLazily(call => Observable.Never<UdpReceiveResult>());
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint)).ReturnsLazily(call => Observable.Return(call.GetArgument<int>(1)));
 
-                    A.CallTo(() => _receiveSocket.ReceiveAsync()).Returns(receiveTask.Task);
-                    A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint)).Returns(sendTask.Task);
+            Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey, _scheduler);
 
-                    Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey);
+            instance.Open();
 
-                    instance.Open();
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustNotHaveHappened();
 
-                    A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustNotHaveHappened();
+            var deviceResponse = instance.Send(new Subject.Request.GetDevice(0));
 
-                    var deviceResponse = instance.Send(new Subject.Request.GetDevice(0));
+            _scheduler.AdvanceBy(1);
 
-                    await A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Within.TimeSpan(TimeSpan.FromSeconds(10)));
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
 
-                    A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
+            var versionResponse = instance.Send(new Subject.Request.GetVersion());
 
-                    var versionResponse = instance.Send(new Subject.Request.GetVersion());
+            _scheduler.AdvanceBy(1);
 
-                    A.CallTo(() => _sendSocket.SendAsync(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
-                }
-            );
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
+        }
+
+        [Test]
+        public void QueuedCommandsAreSentInSequence()
+        {
+            byte[] deviceResponse = Encoding.ASCII.GetBytes("DEVICE");
+            Subject.Response.Device expectedDevice = new Subject.Response.Device(Subject.Status.Ok, 0, "TEST", "TEST", "TEST", Values.SignalStrength.Parse("0"), Values.LinkQuality.Parse("0"), Values.BatteryState.Parse("0"), TimeSpan.FromSeconds(1), 1, 1);
+            A.CallTo(() => _responseParser.GetResponses("DEVICE")).Returns(new[] { expectedDevice });
+
+            byte[] versionResponse = Encoding.ASCII.GetBytes("VERSION");
+            Subject.Response.Version expectedVersion = new Subject.Response.Version(Subject.Status.Ok, "TEST", "TEST", "TEST");
+            A.CallTo(() => _responseParser.GetResponses("VERSION")).Returns(new[] { expectedVersion });
+
+            Subject<UdpReceiveResult> received = new Subject<UdpReceiveResult>();
+            
+            A.CallTo(() => _receiveSocket.Receive()).Returns(received);
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.Ignored, A<int>.Ignored, RemoteEndpoint)).ReturnsLazily(call => Observable.Return(call.GetArgument<int>(1)));
+
+            Subject.Endpoint.Instance instance = new Subject.Endpoint.Instance(_socketFactory, _responseParser, LocalEndpoint, RemoteEndpoint, TimeSpan.FromSeconds(10), UdpKey, _scheduler);
+
+            instance.Open();
+
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustNotHaveHappened();
+            
+            Task<Subject.Response.Device> deviceTask = instance.Send(new Subject.Request.GetDevice(0));
+            Task<Subject.Response.Version> versionTask = instance.Send(new Subject.Request.GetVersion());
+
+            _scheduler.AdvanceBy(1);
+
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Once);
+
+            received.OnNext(new UdpReceiveResult(deviceResponse, RemoteEndpoint));
+
+            Assert.That(deviceTask.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(expectedDevice, Is.EqualTo(deviceTask.Result));
+
+            _scheduler.AdvanceBy(1);
+
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Twice);
+
+            received.OnNext(new UdpReceiveResult(versionResponse, RemoteEndpoint));
+
+            Assert.That(versionTask.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(expectedVersion, Is.EqualTo(versionTask.Result));
+
+            _scheduler.AdvanceBy(1);
+
+            A.CallTo(() => _sendSocket.Send(A<byte[]>.That.Matches(bytes => bytes.Length > 0), A<int>.Ignored, RemoteEndpoint)).MustHaveHappened(Repeated.Exactly.Twice);
+
         }
     }
 }

@@ -35,7 +35,7 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
         private readonly IScheduler _scheduler;
 
         private readonly Subject<ScheduledRequest> _sendQueue;
-        private readonly IObservable<IFallible<ScheduledRequest>> _send;
+        private readonly IObservable<ScheduledRequest> _send;
         private readonly IConnectableObservable<IResponse> _responses;
         
         private IDisposable _connection;
@@ -54,7 +54,8 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
                 .Using(
                     () => socketFactory.ConstructCommandReceiveSocket(localEndpoint),
                     udpReceive => Observable
-                        .FromAsync(udpReceive.ReceiveAsync)
+                        .Return(1)
+                        .SelectMany(_ => udpReceive.Receive())
                         .Select(result => result.Buffer)
                         .Select(bytes => Encoding.ASCII.GetString(bytes))
                         .Do(Instrumentation.Command.Endpoint.Receive)
@@ -68,7 +69,30 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
                     () => socketFactory.ConstructCommandSendSocket(localEndpoint),
                     udpSend => _sendQueue
                         .ObserveOn(_scheduler)
-                        .Select(scheduledRequest => Send(udpSend, scheduledRequest)));               
+                        .Select(scheduledRequest => Send(udpSend, scheduledRequest))
+                        .Concat());
+        }
+
+        private IObservable<ScheduledRequest> Send(Socket.IObservableUdpClient socket, ScheduledRequest scheduledRequest)
+        {
+            return Observable.Create<ScheduledRequest>(
+                observer =>
+                {
+                    Instrumentation.Command.Endpoint.Request(scheduledRequest.Request);
+
+                    string requestString = AddKey(scheduledRequest.Request.AsString());
+
+                    Instrumentation.Command.Endpoint.Send(requestString);
+
+                    byte[] datagram = Encoding.ASCII.GetBytes(requestString);
+
+                    return Observable.Zip(
+                        scheduledRequest.ParseResponse(_responses),
+                        socket.Send(datagram, datagram.Length, _remoteEndpoint),
+                        (response, sent) => scheduledRequest)
+                        .Subscribe(observer);
+                }
+            );
         }
 
         public void Dispose()
@@ -95,39 +119,12 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
             return string.Format("{0},{1}", command, _udpKey);
         }
 
-        private IFallible<ScheduledRequest> Send(Socket.IUdpClient socket, ScheduledRequest scheduledRequest)
-        {
-            Instrumentation.Command.Endpoint.Request(scheduledRequest.Request);
-
-            string requestString = AddKey(scheduledRequest.Request.AsString());
-
-            Instrumentation.Command.Endpoint.Send(requestString);
-
-            byte[] datagram = Encoding.ASCII.GetBytes(requestString);
-
-            Task send = socket.SendAsync(datagram, datagram.Length, _remoteEndpoint);
-
-            try
-            {
-                return Observable.Zip(
-                    scheduledRequest.ParseResponse(_responses).ToObservable(),
-                    send.ToObservable(),
-                    (x, y) => Fallible.FromValue(scheduledRequest))
-                    .Take(1)
-                    .Timeout(TimeSpan.FromSeconds(30))
-                    .Wait();
-            }
-            catch (Exception e)
-            {
-                return Fallible.FromError<ScheduledRequest>(e);
-            }
-        }
         
-        private Task<T> ScheduledSend<T>(IRequest request) where T : IResponse
+        private Task<T> ScheduledSend<T>(IRequest request) where T : class, IResponse
         {
             TaskCompletionSource<T> result = new TaskCompletionSource<T>();
 
-            Func<IObservable<IResponse>, Task> handler =
+            Func<IObservable<IResponse>, IObservable<IResponse>> handler =
                 responses =>
                 {
                     Instrumentation.Command.Endpoint.AddingReceiveHandlerFor(typeof(T));
@@ -137,7 +134,7 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
                         .OfType<T>()
                         .Do(response => Instrumentation.Command.Endpoint.ReceiveHandlerProcessing(response.GetType()))
                         .ThrowWhen(RequestFailed, response => RequestException(request, response))
-                        .Timeout(_requestTimeout)
+                        .Timeout(_requestTimeout, _scheduler)
                         .Take(1)
                         .Do(
                             value =>
@@ -149,9 +146,8 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
                             {
                                 Instrumentation.Command.Endpoint.ErroringReceiveHandlerFor(typeof(T), exception);
                                 result.SetException(exception);
-                            }
-                        )
-                        .ToTask();
+                            })
+                        .Cast<IResponse>();
                 };
 
             _sendQueue.OnNext(new ScheduledRequest(request, handler));

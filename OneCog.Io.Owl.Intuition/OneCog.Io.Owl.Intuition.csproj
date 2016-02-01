@@ -148,8 +148,7 @@
     <Compile Include="Packet\Wrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Socket\Factory.cs" />
-    <Compile Include="Socket\IUdpClient.cs" />
-    <Compile Include="Socket\UdpClientDecorator.cs" />
+    <Compile Include="Socket\ObservableUdpClient.cs" />
     <Compile Include="Values\BatteryState.cs" />
     <Compile Include="Values\LinkQuality.cs" />
     <Compile Include="Values\SignalStrength.cs" />

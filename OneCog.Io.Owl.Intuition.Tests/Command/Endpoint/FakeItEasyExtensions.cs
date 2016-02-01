@@ -50,8 +50,11 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Endpoint
             configuration.Invokes(
                 call =>
                 {
-                    tcs.TrySetResult(new object());
-                    cts.Cancel();
+                    if (!tcs.Task.IsCompleted)
+                    {
+                        tcs.TrySetResult(new object());
+                        cts.Cancel();
+                    }
                 }
             );
 
