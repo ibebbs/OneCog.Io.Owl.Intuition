@@ -74,6 +74,7 @@
   <ItemGroup>
     <Compile Include="Command\Endpoint\Factory.cs" />
     <Compile Include="Command\Endpoint\Instance.cs" />
+    <Compile Include="Command\Endpoint\ScheduledRequest.cs" />
     <Compile Include="Command\IRequest.cs" />
     <Compile Include="Command\IResponse.cs" />
     <Compile Include="Command\Request\GetDevice.cs" />

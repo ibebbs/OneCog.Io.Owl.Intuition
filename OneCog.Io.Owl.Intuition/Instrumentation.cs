@@ -34,6 +34,21 @@ namespace OneCog.Io.Owl.Intuition
 
         [Event(4, Message = "Error", Level = EventLevel.Error)]
         void Error(System.Exception exception);
+
+        [Event(5, Message = "AddingReceiveHandlerFor", Level = EventLevel.Informational)]
+        void AddingReceiveHandlerFor(Type type);
+
+        [Event(6, Message = "ReceiveHandlerReceived", Level = EventLevel.Informational)]
+        void ReceiveHandlerReceived(Type type);
+
+        [Event(7, Message = "ReceiveHandlerProcessing", Level = EventLevel.Informational)]
+        void ReceiveHandlerProcessing(Type type);
+
+        [Event(8, Message = "CompletingReceiveHandlerFor", Level = EventLevel.Informational)]
+        void CompletingReceiveHandlerFor(Type type);
+
+        [Event(9, Message = "ErroringReceiveHandlerFor", Level = EventLevel.Error)]
+        void ErroringReceiveHandlerFor(Type type, Exception exception);
     }
 
     [EventSourceImplementation(Name = "Bebbs-Harmonize-With-Owl-Intuition-Packet-Endpoint")]
