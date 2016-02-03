@@ -97,13 +97,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Command\Endpoint\FakeItEasyExtensions.cs" />
     <Compile Include="Command\Endpoint\InstanceShould.cs" />
-    <Compile Include="Command\Endpoint\LimitedConcurrencyScheduler.cs" />
-    <Compile Include="Command\Endpoint\LimitedConcurrencyLevelTaskScheduler.cs" />
-    <Compile Include="Command\Endpoint\LimitedConcurrencySchedulerShould.cs" />
     <Compile Include="Command\Response\ParserTestFixture.cs" />
     <Compile Include="Command\Response\Resources.Designer.cs" />
+    <Compile Include="Device\Types\Cmr180Should.cs" />
     <Compile Include="Packet\Resources.Designer.cs" />
     <Compile Include="Packet\SerializerTestFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -122,9 +119,7 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Device\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>

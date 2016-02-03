@@ -101,6 +101,7 @@
     <Compile Include="Configuration\Device.cs" />
     <Compile Include="Configuration\Provider.cs" />
     <Compile Include="Configuration\Settings.cs" />
+    <Compile Include="Device\DeviceExtensions.cs" />
     <Compile Include="Device\Factory.cs" />
     <Compile Include="Device\IInstance.cs" />
     <Compile Include="Device\Type.cs" />

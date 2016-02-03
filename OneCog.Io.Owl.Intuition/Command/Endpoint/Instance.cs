@@ -118,7 +118,6 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
         {
             return string.Format("{0},{1}", command, _udpKey);
         }
-
         
         private Task<T> ScheduledSend<T>(IRequest request) where T : class, IResponse
         {
