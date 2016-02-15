@@ -45,7 +45,7 @@ namespace OneCog.Io.Owl.Intuition.Device.Settings
         bool AutoConfigurePacketPort { get; }
     }
 
-    internal class Values : IValues
+    public class Values : IValues
     {
         public Values(IPEndPoint localCommandEndpoint, IPEndPoint localPacketEndpoint, string owlCommandKey, PhysicalAddress owlMacAddress, IPEndPoint owlCommandEndpoint, TimeSpan owlCommandResponseTimeout, bool autoConfigurePacketPort)
         {

@@ -90,7 +90,7 @@ namespace OneCog.Io.Owl.Intuition.Command.Endpoint
                         scheduledRequest.ParseResponse(_responses),
                         socket.Send(datagram, datagram.Length, _remoteEndpoint),
                         (response, sent) => scheduledRequest)
-                        .Subscribe(observer);
+                        .Subscribe(value => observer.OnNext(value), ex => observer.OnError(ex), () => observer.OnCompleted());
                 }
             );
         }

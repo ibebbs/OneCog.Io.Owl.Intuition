@@ -32,7 +32,7 @@ namespace OneCog.Io.Owl.Intuition.Packet.Endpoint
             _udpClient = new UdpClient();
             _udpClient.Client.Bind(_localPacketEndpoint);
 
-            _readings = Observable.FromAsync(_udpClient.ReceiveAsync).Repeat()
+            _readings = Observable.FromAsync(() => _udpClient.ReceiveAsync()).Repeat()
                                   .Select(result => result.Buffer)
                                   .Select(Encoding.ASCII.GetString)
                                   .Do(Instrumentation.Packet.Endpoint.Receive)

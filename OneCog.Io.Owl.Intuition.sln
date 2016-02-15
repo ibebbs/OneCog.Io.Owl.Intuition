@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneCog.Io.Owl.Intuition", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneCog.Io.Owl.Intuition.Tests", "OneCog.Io.Owl.Intuition.Tests\OneCog.Io.Owl.Intuition.Tests.csproj", "{0000C64F-D8D7-4ED5-8E0F-743F725559F8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneCog.Io.Owl.Intuition.Console", "OneCog.Io.Owl.Intuition.Console\OneCog.Io.Owl.Intuition.Console.csproj", "{48B3E73D-7ED6-4F84-860D-3E1CDD4B667E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{0000C64F-D8D7-4ED5-8E0F-743F725559F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0000C64F-D8D7-4ED5-8E0F-743F725559F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0000C64F-D8D7-4ED5-8E0F-743F725559F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48B3E73D-7ED6-4F84-860D-3E1CDD4B667E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48B3E73D-7ED6-4F84-860D-3E1CDD4B667E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48B3E73D-7ED6-4F84-860D-3E1CDD4B667E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48B3E73D-7ED6-4F84-860D-3E1CDD4B667E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
