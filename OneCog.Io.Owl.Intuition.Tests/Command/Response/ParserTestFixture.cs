@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Collections.Generic;
 using NUnit.Framework;
 using System.Net;
+using Subject = OneCog.Io.Owl.Intuition;
 
 namespace OneCog.Io.Owl.Intuition.Tests.Command.Response
 {
     [TestFixture]
     public class ParserTestFixture
     {
-        private static readonly Intuition.Command.Response.Builder.DeviceResponse DeviceResponseBuilder = new Intuition.Command.Response.Builder.DeviceResponse();
-        private static readonly Intuition.Command.Response.Builder.RostaResponse RostaResponseBuilder = new Intuition.Command.Response.Builder.RostaResponse();
-        private static readonly Intuition.Command.Response.Builder.VersionResponse VersionResponseBuilder = new Intuition.Command.Response.Builder.VersionResponse();
-        private static readonly Intuition.Command.Response.Builder.UdpResponse UdpResponseBuilder = new Intuition.Command.Response.Builder.UdpResponse();
-        private static readonly Intuition.Command.Response.Builder.SaveResponse SaveResponseBuilder = new Intuition.Command.Response.Builder.SaveResponse();
+        private static readonly Subject.Network.Command.Response.Builder.DeviceResponse DeviceResponseBuilder = new Subject.Network.Command.Response.Builder.DeviceResponse();
+        private static readonly Subject.Network.Command.Response.Builder.RostaResponse RostaResponseBuilder = new Subject.Network.Command.Response.Builder.RostaResponse();
+        private static readonly Subject.Network.Command.Response.Builder.VersionResponse VersionResponseBuilder = new Subject.Network.Command.Response.Builder.VersionResponse();
+        private static readonly Subject.Network.Command.Response.Builder.UdpResponse UdpResponseBuilder = new Subject.Network.Command.Response.Builder.UdpResponse();
+        private static readonly Subject.Network.Command.Response.Builder.SaveResponse SaveResponseBuilder = new Subject.Network.Command.Response.Builder.SaveResponse();
 
-        private static readonly IEnumerable<Intuition.Command.Response.IBuilder> Builders = new Intuition.Command.Response.IBuilder[]
+        private static readonly IEnumerable<Subject.Network.Command.Response.IBuilder> Builders = new Subject.Network.Command.Response.IBuilder[]
         {
             DeviceResponseBuilder,
             RostaResponseBuilder,
@@ -28,13 +28,13 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Response
         [Test]
         public void ShouldParseVersionResponse()
         {
-            Intuition.Command.Response.Parser subject = new Intuition.Command.Response.Parser(Builders);
+            Subject.Network.Command.Response.Parser subject = new Subject.Network.Command.Response.Parser(Builders);
 
-            IEnumerable<Intuition.Command.IResponse> responses = subject.GetResponses(Resources.VersionResponse);
-            Intuition.Command.Response.Version response = responses.OfType<Intuition.Command.Response.Version>().FirstOrDefault();
+            IEnumerable<Subject.Network.Command.IResponse> responses = subject.GetResponses(Resources.VersionResponse);
+            Subject.Network.Command.Response.Version response = responses.OfType<Subject.Network.Command.Response.Version>().FirstOrDefault();
 
             Assert.IsNotNull(response);
-            Assert.AreEqual(Intuition.Command.Status.Ok, response.Status);
+            Assert.AreEqual(Subject.Network.Command.Status.Ok, response.Status);
             Assert.AreEqual("3", response.Firmware);
             Assert.AreEqual("1", response.Revision);
             Assert.AreEqual("4", response.Build);
@@ -43,13 +43,13 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Response
         [Test]
         public void ShouldParseRostaResponse()
         {
-            Intuition.Command.Response.Parser subject = new Intuition.Command.Response.Parser(Builders);
+            Subject.Network.Command.Response.Parser subject = new Subject.Network.Command.Response.Parser(Builders);
 
-            IEnumerable<Intuition.Command.IResponse> responses = subject.GetResponses(Resources.RostaResponse);
-            Intuition.Command.Response.Rosta response = responses.OfType<Intuition.Command.Response.Rosta>().FirstOrDefault();
+            IEnumerable<Subject.Network.Command.IResponse> responses = subject.GetResponses(Resources.RostaResponse);
+            Subject.Network.Command.Response.Rosta response = responses.OfType<Subject.Network.Command.Response.Rosta>().FirstOrDefault();
 
             Assert.IsNotNull(response);
-            Assert.AreEqual(Intuition.Command.Status.Ok, response.Status);
+            Assert.AreEqual(Subject.Network.Command.Status.Ok, response.Status);
             Assert.IsNotNull(response.Devices);            
             Assert.AreEqual("0=CMR180|1=ROOM_STAT", string.Join("|", response.Devices.Select(tuple => string.Format("{0}={1}", tuple.Item1, tuple.Item2)).ToArray()));
         }
@@ -57,13 +57,13 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Response
         [Test]
         public void ShouldParseDeviceResponse()
         {
-            Intuition.Command.Response.Parser subject = new Intuition.Command.Response.Parser(Builders);
+            Subject.Network.Command.Response.Parser subject = new Subject.Network.Command.Response.Parser(Builders);
 
-            IEnumerable<Intuition.Command.IResponse> responses = subject.GetResponses(Resources.DeviceResponse);
-            Intuition.Command.Response.Device response = responses.OfType<Intuition.Command.Response.Device>().FirstOrDefault();
+            IEnumerable<Subject.Network.Command.IResponse> responses = subject.GetResponses(Resources.DeviceResponse);
+            Subject.Network.Command.Response.Device response = responses.OfType<Subject.Network.Command.Response.Device>().FirstOrDefault();
 
             Assert.IsNotNull(response);
-            Assert.AreEqual(Intuition.Command.Status.Ok, response.Status);
+            Assert.AreEqual(Subject.Network.Command.Status.Ok, response.Status);
             Assert.AreEqual(0, response.Index);
             Assert.AreEqual("F2", response.DeviceAddress);
             Assert.AreEqual("CMR180", response.DeviceType);
@@ -79,13 +79,13 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Response
         [Test]
         public void ShouldParseUdpResponse()
         {
-            Intuition.Command.Response.Parser subject = new Intuition.Command.Response.Parser(Builders);
+            Subject.Network.Command.Response.Parser subject = new Subject.Network.Command.Response.Parser(Builders);
 
-            IEnumerable<Intuition.Command.IResponse> responses = subject.GetResponses(Resources.UdpResponse);
-            Intuition.Command.Response.Udp response = responses.OfType<Intuition.Command.Response.Udp>().FirstOrDefault();
+            IEnumerable<Subject.Network.Command.IResponse> responses = subject.GetResponses(Resources.UdpResponse);
+            Subject.Network.Command.Response.Udp response = responses.OfType<Subject.Network.Command.Response.Udp>().FirstOrDefault();
 
             Assert.IsNotNull(response);
-            Assert.AreEqual(Intuition.Command.Status.Ok, response.Status);
+            Assert.AreEqual(Subject.Network.Command.Status.Ok, response.Status);
             Assert.AreEqual(string.Empty, response.HostName);
             Assert.AreEqual(new IPEndPoint(IPAddress.Parse("192.168.1.27"), 13), response.Endpoint);
         }
@@ -93,13 +93,13 @@ namespace OneCog.Io.Owl.Intuition.Tests.Command.Response
         [Test]
         public void ShouldParseSaveResponse()
         {
-            Intuition.Command.Response.Parser subject = new Intuition.Command.Response.Parser(Builders);
+            Subject.Network.Command.Response.Parser subject = new Subject.Network.Command.Response.Parser(Builders);
 
-            IEnumerable<Intuition.Command.IResponse> responses = subject.GetResponses(Resources.SaveResponse);
-            Intuition.Command.Response.Save response = responses.OfType<Intuition.Command.Response.Save>().FirstOrDefault();
+            IEnumerable<Subject.Network.Command.IResponse> responses = subject.GetResponses(Resources.SaveResponse);
+            Subject.Network.Command.Response.Save response = responses.OfType<Subject.Network.Command.Response.Save>().FirstOrDefault();
 
             Assert.IsNotNull(response);
-            Assert.AreEqual(Intuition.Command.Status.Ok, response.Status);
+            Assert.AreEqual(Subject.Network.Command.Status.Ok, response.Status);
         }
     }
 }

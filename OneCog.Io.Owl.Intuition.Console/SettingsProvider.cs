@@ -6,7 +6,7 @@ using System.Net.Sockets;
 
 namespace OneCog.Io.Owl.Intuition.Console
 {
-    public class SettingsProvider : Device.Settings.IProvider
+    public class SettingsProvider : Settings.IProvider
     {
         private readonly Options _options;
 
@@ -15,13 +15,13 @@ namespace OneCog.Io.Owl.Intuition.Console
             _options = options;
         }
 
-        public Device.Settings.IValues GetValues()
+        public Settings.IValues GetValues()
         {
             IPAddress ipAddress = string.IsNullOrWhiteSpace(_options.LocalIpAddress)
               ? Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork)
               : IPAddress.Parse(_options.LocalIpAddress);
 
-            return new Device.Settings.Values(
+            return new Settings.Values(
                 new IPEndPoint(ipAddress, _options.LocalCommandPort),
                 new IPEndPoint(ipAddress, _options.LocalPacketPort),
                 _options.OwlUdpKey,

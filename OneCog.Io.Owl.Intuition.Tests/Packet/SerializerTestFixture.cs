@@ -9,9 +9,9 @@ namespace OneCog.Io.Owl.Intuition.Tests.Packet
         [Test]
         public void ShouldCorrectlyDeserializeElectricityPacket()
         {
-            Owl.Intuition.Packet.Serializer subject = new Intuition.Packet.Serializer();
+            Owl.Intuition.Network.Packet.Serializer subject = new Intuition.Network.Packet.Serializer();
 
-            Owl.Intuition.Packet.Electricity packet = subject.DeserializeElectricity(Resources.ElectricityPacket);
+            Owl.Intuition.Network.Packet.Electricity packet = subject.DeserializeElectricity(Resources.ElectricityPacket);
 
             Assert.IsNotNull(packet);
             Assert.AreEqual("4437190032EC", packet.Id);

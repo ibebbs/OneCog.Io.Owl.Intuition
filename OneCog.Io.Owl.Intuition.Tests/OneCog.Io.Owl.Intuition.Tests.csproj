@@ -100,7 +100,7 @@
     <Compile Include="Command\Endpoint\InstanceShould.cs" />
     <Compile Include="Command\Response\ParserTestFixture.cs" />
     <Compile Include="Command\Response\Resources.Designer.cs" />
-    <Compile Include="Device\Types\Cmr180Should.cs" />
+    <Compile Include="Network\Bridge\InstanceShould.cs" />
     <Compile Include="Packet\Resources.Designer.cs" />
     <Compile Include="Packet\SerializerTestFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
