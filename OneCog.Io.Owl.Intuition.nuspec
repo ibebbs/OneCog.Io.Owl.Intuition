@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>OneCog.Io.Owl.Intuition</id>
+    <version>$version$</version>
+    <title>OneCog.Io.Owl.Intuition</title>
+    <authors>OneCog</authors>
+    <owners>OneCog</owners>
+    <licenseUrl>https://github.com/ibebbs/OneCog.Io.Owl.Intuition/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ibebbs/OneCog.Io.Owl.Intuition/</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/ibebbs/OneCog.Io.Owl.Intuition/master/Owl-Logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Open source, library for interacting with the Owl Intuition series of devices.</description>
+    <copyright>Copyright 2016</copyright>
+    <tags>OneCog Owl Intuition</tags>
+    @dependencies@
+  </metadata>
+  @files@
+</package>
