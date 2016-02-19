@@ -1,4 +1,4 @@
-#r "./src/packages/FAKE.4.7.2/tools/FakeLib.dll"
+#r "./packages/FAKE.4.20.0/tools/FakeLib.dll"
 
 open Fake
 open System.IO;
@@ -11,10 +11,10 @@ let deployDir = "./deploy/"
  
 // version info
 let version = environVarOrDefault "PackageVersion" "1.0.0.0"  // or retrieve from CI server
-let summary = "Open source, library for interacting with the Owl Intuition series of devices."
+let summary = "Open source library for interacting with the Owl Intuition series of devices."
 let copyright = "Ian Bebbington, 2015"
 let tags = "OneCog Owl Intuition"
-let description = "Open source, library for interacting with the Owl Intuition series of devices."
+let description = "Open source library for interacting with the Owl Intuition series of devices."
 
 let assemblies = [ "OneCog.Io.Owl.Intuition.dll"; "OneCog.Io.Owl.Intuition.pdb"; ]
 
@@ -48,7 +48,7 @@ Target "Test" (fun _ ->
 Target "Package" (fun _ ->
 
     // Copy to deployment folder
-    CopyWithSubfoldersTo deployDir [ !! "./src/**/*.cs" ]
+    CopyWithSubfoldersTo deployDir [ !! "./src/OneCog.Io.Owl.Intuition/**/*.cs" ]
     assemblies |> List.map(fun a -> buildDir @@ a) |> CopyFiles deployDir  
 
     // Setup files to include in package
